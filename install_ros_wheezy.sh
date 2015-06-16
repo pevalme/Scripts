@@ -78,8 +78,9 @@ cd ~/ros_catkin_ws/external_src
 git clone https://github.com/Itseez/opencv.git
 mkdir opencv/release
 cd opencv/release
-cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local ..
+cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_C_COMPILER=gcc4.4 -D CMAKE_INSTALL_PREFIX=/usr/local ..
 make
+make uninstall # just to check there are no older versions installed
 sudo checkinstall make install
 # When check-install asks for any changes, the name (2) needs to change from "release" 
 # to "libopencv-dev" otherwise rosdep install wont find it. 
@@ -94,7 +95,51 @@ sudo apt-get install libogre-1.8-dev
 # Resolving Dependencies with rosdep
 cd ~/ros_catkin_ws
 rosdep install --from-paths src --ignore-src --rosdistro indigo -y -r --os=debian:wheezy
+# Note: Rosdep and apt-get may report that python-rosdep, python-catkin-pkg, 
+#python-rospkg, and python-rosdistro failed to install; however, you can ignore this
+# error because they have already been installed with pip
 
 # Building the catkin workspace
 sudo ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/indigo
 source /opt/ros/indigo/setup.bash
+
+################
+# To update your workspace, first move your existing rosinstall file so that it doesn't get overwritten, and generate an updated version. For simplicity, we will cover the *destop-full* variant. For other variants, update the filenames and rosinstall_generator arguments appropriately.
+
+mv -i indigo-desktop-full-wet.rosinstall indigo-desktop-full-wet.rosinstall.old
+rosinstall_generator desktop_full --rosdistro indigo --deps --wet-only --tar > indigo-desktop-full-wet.rosinstall
+
+# Then, compare the new rosinstall file to the old version to see which packages will be updated:
+
+diff -u indigo-desktop-full-wet.rosinstall indigo-desktop-full-wet.rosinstall.old
+
+#If you're satified with these changes, incorporate the new rosinstall file into the workspace and update your workspace:
+
+wstool merge -t src indigo-desktop-full-wet.rosinstall
+wstool update -t src
+#####################
+
+#####################
+
+# Adding released packages
+
+# You may add additional packages to the installed ros workspace that have been released into the ros ecosystem. First, a new rosinstall file must be created including the new packages (Note, this can also be done at the initial install). For example, if we have installed ros_comm, but want to add ros_control and joystick_drivers, the command would be:
+
+cd ~/ros_catkin_ws
+rosinstall_generator ros_comm ros_control joystick_drivers --rosdistro indigo --deps --wet-only --exclude roslisp --tar > indigo-custom_ros.rosinstall
+
+# You may keep listing as many ROS packages as you'd like separated by spaces.
+
+# Next, update the workspace with wstool:
+
+wstool merge -t src indigo-custom_ros.rosinstall
+wstool update -t src
+
+# After updating the workspace, you may want to run rosdep to install any new dependencies that are required:
+
+rosdep install --from-paths src --ignore-src --rosdistro indigo -y -r --os=debian:wheezy
+
+# Finally, now that the workspace is up to date and dependencies are satisfied, rebuild the workspace:
+
+sudo ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/indigo
+#####################
