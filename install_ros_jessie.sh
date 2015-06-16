@@ -20,6 +20,8 @@ wstool init -j8 src jade-desktop-full-wet.rosinstall
 
 # If wstool init fails or is interrupted, you can resume the download by running: wstool update -j 4 -t src
 
+sudo apt-key update
+sudo apt-get update
 
 ##export ROS_OS_OVERRIDE="Debian:8.1:jessie"  # This line must be completed correctly
 ##rosdep update
@@ -98,7 +100,7 @@ sudo checkinstall make install
 # "collada-dom-dev" otherwise the rosdep install wont find it.
 
 cd ~/ros_catkin_ws
-rosdep install --from-paths src --ignore-src --rosdistro indigo -y -r --os=debian:jessie
+rosdep install --from-paths src --ignore-src --rosdistro indigo -y -r --os=debian:wheezy
 
 # Continuing with the nomral installation
 ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/indigo
